@@ -1,96 +1,71 @@
-import React, {Component} from 'react';
-import {Switch} from 'antd';
-import ReactJson from 'react-json-view';
+import React, { Component, Fragment } from 'react'
+import { Switch, Input } from 'antd'
+import ReactJson from 'react-json-view'
 
-import './Replacer.less';
+const {TextArea} = Input
+import './Replacer.less'
 
 export default class Replacer extends Component {
   constructor(props) {
-    super();
+    super(props)
     this.state = {
       showJSONEditor: false,
       txt: props.defaultValue,
-      src: null,
-      originalResponse: props.originalResponse
+      src: null
     }
 
     try {
-      let src = JSON.parse(props.defaultValue);
+      let src = JSON.parse(props.defaultValue)
       if (src && typeof src === 'object') {
-        this.state.src = src;
+        this.state.src = src
       }
     } catch (e) {
 
-    }
-  }
-
-
-  componentDidUpdate(prevProps, {showJSONEditor}) {
-    if (showJSONEditor !== this.state.showJSONEditor) {
-      this.props.updateAddBtnTop();
-    }
-  }
-
-  componentWillReceiveProps(nextProps, nextContext) {
-    if (nextProps.originalResponse !== this.state.originalResponse) {
-      this.setState({
-        originalResponse: nextProps.originalResponse
-      })
     }
   }
 
   handleOverrideTxtChange = (txt) => {
-    let src;
+    let src
     try {
-      src = JSON.parse(txt);
+      src = JSON.parse(txt)
       if (!(src && typeof src === 'object')) {
-        src = null;
+        src = null
       }
     } catch (e) {
 
     }
-    this.setState({txt, src});
+    this.setState({txt, src})
 
-    window.setting.requestMock_rules[this.props.index].overrideTxt = txt;
-    this.props.set('requestMock_rules', window.setting.requestMock_rules);
+    window.setting.requestMock_rules[this.props.index].overrideTxt = txt
+    this.props.set('requestMock_rules', window.setting.requestMock_rules)
   }
 
   handleJSONEditorChange = ({updated_src: src}) => {
-    let txt = JSON.stringify(src);
-    this.setState({txt, src});
+    let txt = JSON.stringify(src)
+    this.setState({txt, src})
 
-    window.setting.requestMock_rules[this.props.index].overrideTxt = txt;
-    this.props.set('requestMock_rules', window.setting.requestMock_rules);
+    window.setting.requestMock_rules[this.props.index].overrideTxt = txt
+    this.props.set('requestMock_rules', window.setting.requestMock_rules)
   }
 
   handleEditorSwitch = showJSONEditor => {
-    this.setState({showJSONEditor});
+    this.setState({showJSONEditor})
   }
-
 
   render() {
 
     return (
-      <>
+      <Fragment>
         <div className="replace-with">
-          Replace With:
+          Replace Response With:
         </div>
-        <textarea
-          className="overrideTxt"
-          // placeholder="replace with"
-          style={{resize: 'none'}}
+        <TextArea
+          rows={4}
           value={this.state.txt}
           onChange={e => this.handleOverrideTxtChange(e.target.value)}
         />
-        <div className="original-response">
-          Original Response:
-        </div>
-        <textarea
-          className="overrideTxt"
-          style={{resize: 'none'}}
-          value={this.state.originalResponse}
-        />
-        <Switch style={{marginTop: '6px'}} onChange={this.handleEditorSwitch} checkedChildren="JSON Editor" unCheckedChildren="JSON Editor" size="small" />
+        <Switch style={{marginTop: '6px'}} onChange={this.handleEditorSwitch} checkedChildren="JSON Editor"
+                unCheckedChildren="JSON Editor" size="small"/>
         {this.state.showJSONEditor && (
           this.state.src ?
           <div className="JSONEditor">
@@ -106,7 +81,7 @@ export default class Replacer extends Component {
             />
           </div> : <div className="JSONEditor Invalid">Invalid JSON</div>
         )}
-      </>
-    );
+      </Fragment>
+    )
   }
 }

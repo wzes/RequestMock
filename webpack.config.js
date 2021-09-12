@@ -1,3 +1,4 @@
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 const path = require('path')
 
 module.exports = {
@@ -49,11 +50,14 @@ module.exports = {
       }]
     }]
   },
+  plugins: [
+    // 处理HTML文件
+    new HtmlWebpackPlugin({
+      template: './public/index.html'
+    }),
+  ],
   devServer: {
-    contentBase: __dirname,
-    compress: true,
     port: 9001,
-    host: 'localhost',
-    hot: true
+    compress: true,
   }
 }

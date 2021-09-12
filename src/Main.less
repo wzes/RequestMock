@@ -6,31 +6,38 @@
   height: 100%;
   background: white;
 }
+
 .settingBody {
   position: relative;
   transition: all .5s;
   padding-top: 15px;
 }
+
 .settingBody-hidden {
   transform: translateY(calc(-100% + 15px));
 }
+
 .collapse {
   transition: all .6s;
   margin-bottom: 10px;
 }
+
 .collapse-hidden {
   transform: translateY(-100px);
   opacity: 0;
 }
-.intercepted-requests {
+
+.intercepted-requests, .original-response {
   margin-bottom: 6px;
   margin-top: 7px;
   text-align: left;
   font-weight: 500;
 }
+
 .intercepted {
   text-align: left;
 }
+
 .intercepted > span {
   width: 100%;
   display: inline-block;
@@ -38,14 +45,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .url {
   vertical-align: top;
 }
+
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
 .wrapper-btn-add {
   position: absolute;
   top: 0;
@@ -54,10 +64,12 @@
   text-align: center;
   transition: top .2s;
 }
+
 .btn-add {
   transition: transform .5s;
   transition-delay: .1s;
 }
+
 .btn-add-hidden {
   transform: rotate(-135deg);
 }

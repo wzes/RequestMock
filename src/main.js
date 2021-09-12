@@ -1,8 +1,8 @@
-import React, {Component} from 'react';
+import React, {Component, Fragment} from 'react';
 import 'antd/dist/antd.css';
 import {Switch, Collapse, Input, Select, Button, Badge, Tooltip} from 'antd';
 const Panel = Collapse.Panel;
-
+const { TextArea } = Input
 import Replacer from './Replacer';
 
 import './Main.less';
@@ -20,74 +20,45 @@ const buildUUID = () => {
 
 
 export default class Main extends Component {
-  constructor() {
-    super();
-    chrome.runtime.onMessage.addListener(({type, to, url, match, originalResponse}) => {
-      if (type === 'requestMock' && to === 'iframe') {
-        const {interceptedRequests} = this.state;
-        if (!interceptedRequests[match]) interceptedRequests[match] = [];
-        const exits = interceptedRequests[match].some(obj => {
-          if (obj.url === url) {
-            obj.num++;
-            obj.originalResponse = originalResponse
-            return true;
-          }
-          return false;
-        });
-
-        if (!exits) {
-          interceptedRequests[match].push({url, num: 1, originalResponse});
-        }
-        const i = window.setting.requestMock_rules.findIndex((_) => {
-          return _.match = url
-        })
-        if (i !== -1) {
-          window.setting.requestMock_rules[i].originalResponse = originalResponse
-        }
-        this.setState({interceptedRequests}, () => {
-          if (!exits) {
-            // 新增的拦截的url，会多展示一行url，需要重新计算高度
-            this.updateAddBtnTop_interval();
-          }
-        })
-      }
-    });
-
-    chrome.runtime.sendMessage(chrome.runtime.id, {type: 'requestMock', to: 'background', iframeScriptLoaded: true});
-
-    this.collapseWrapperHeight = -1;
-  }
-
   state = {
     interceptedRequests: {},
   }
 
+  constructor(props) {
+    super(props);
+    chrome.runtime.onMessage && chrome.runtime.onMessage.addListener(({type, to, url, match, originalResponse}) => {
+        if (type === 'requestMock' && to === 'iframe') {
+          const {interceptedRequests} = this.state;
+          if (!interceptedRequests[match]) interceptedRequests[match] = [];
+          const exits = interceptedRequests[match].some(obj => {
+            if (obj.url === url) {
+              obj.num++;
+              obj.response = originalResponse
+              return true;
+            }
+            return false;
+          });
+
+          if (!exits) {
+            interceptedRequests[match].push({url, num: 1, response: originalResponse});
+          }
+          const i = window.setting.requestMock_rules.findIndex((_) => {
+            return _.match = url
+          })
+          if (i !== -1) {
+            window.setting.requestMock_rules[i].originalResponse = originalResponse
+          }
+          this.setState({interceptedRequests})
+        }
+      });
+    chrome.runtime.id && chrome.runtime.sendMessage(chrome.runtime.id, {type: 'requestMock', to: 'background', iframeScriptLoaded: true});
+  }
   componentDidMount() {
-    this.updateAddBtnTop_interval();
-  }
-
-  updateAddBtnTop = () => {
-    let curCollapseWrapperHeight = this.collapseWrapperRef ? this.collapseWrapperRef.offsetHeight : 0;
-    if (this.collapseWrapperHeight !== curCollapseWrapperHeight) {
-      this.collapseWrapperHeight = curCollapseWrapperHeight;
-      clearTimeout(this.updateAddBtnTopDebounceTimeout);
-      this.updateAddBtnTopDebounceTimeout = setTimeout(() => {
-        this.addBtnRef.style.top = `${curCollapseWrapperHeight + 30}px`;
-      }, 50);
-    }
-  }
-
-  // 计算按钮位置
-  updateAddBtnTop_interval = ({timeout = 1000, interval = 50 } = {}) => {
-    const i = setInterval(this.updateAddBtnTop, interval);
-    setTimeout(() => {
-      clearInterval(i);
-    }, timeout);
   }
 
   set = (key, value) => {
     // 发送给background.js
-    chrome.runtime.sendMessage(chrome.runtime.id, {type: 'requestMock', to: 'background', key, value});
+    chrome.runtime.onMessage && chrome.runtime.sendMessage(chrome.runtime.id, {type: 'requestMock', to: 'background', key, value});
     chrome.storage && chrome.storage.local.set({[key]: value});
   }
 
@@ -101,7 +72,6 @@ export default class Main extends Component {
   handleSingleSwitchChange = (switchOn, i) => {
     window.setting.requestMock_rules[i].switchOn = switchOn;
     this.set('requestMock_rules', window.setting.requestMock_rules);
-
     // 这么搞主要是为了能实时同步window.setting.requestMock_rules，并且让性能好一点
     this.forceUpdateDebouce();
   }
@@ -122,7 +92,7 @@ export default class Main extends Component {
 
   handleClickAdd = () => {
     window.setting.requestMock_rules.push({match: '', switchOn: true, key: buildUUID()});
-    this.forceUpdate(this.updateAddBtnTop_interval);
+    this.forceUpdate();
   }
 
   handleClickRemove = (e, i) => {
@@ -137,11 +107,7 @@ export default class Main extends Component {
     this.set('requestMock_rules', window.setting.requestMock_rules);
 
     delete interceptedRequests[match];
-    this.setState({interceptedRequests}, this.updateAddBtnTop_interval);
-  }
-
-  handleCollaseChange = ({timeout = 1200, interval = 50 }) => {
-    this.updateAddBtnTop_interval();
+    this.setState({interceptedRequests});
   }
 
   handleSwitchChange = () => {
@@ -155,17 +121,17 @@ export default class Main extends Component {
     return (
       <div className="main">
         <Switch
+          checkedChildren="开启"
+          unCheckedChildren="关闭"
           style={{zIndex: 10}}
           defaultChecked={window.setting.requestMock_switchOn}
           onChange={this.handleSwitchChange}
         />
         <div className={window.setting.requestMock_switchOn ? 'settingBody' : 'settingBody settingBody-hidden'}>
           {window.setting.requestMock_rules && window.setting.requestMock_rules.length > 0 ? (
-            <div ref={ref => this.collapseWrapperRef = ref}>
+            <div>
               <Collapse
                 className={window.setting.requestMock_switchOn ? 'collapse' : 'collapse collapse-hidden'}
-                onChange={this.handleCollaseChange}
-                // onChangeDone={this.handleCollaseChange}
               >
                 {window.setting.requestMock_rules.map(({filterType = 'normal', match, overrideTxt, overrideStatus, switchOn = true, key, originalResponse}, i) => (
                   <Panel
@@ -181,7 +147,6 @@ export default class Main extends Component {
                             placeholder={filterType === 'normal' ? 'eg: abc/get' : 'eg: abc.*'}
                             style={{width: '63%'}}
                             defaultValue={match}
-                            // onClick={e => e.stopPropagation()}
                             onChange={e => this.handleMatchChange(e, i)}
                           />
                         </Input.Group>
@@ -208,51 +173,55 @@ export default class Main extends Component {
                     />
                     <Replacer
                       defaultValue={overrideTxt}
-                      originalResponse={originalResponse}
-                      updateAddBtnTop={this.updateAddBtnTop}
                       index={i}
                       set={this.set}
                     />
                     {this.state.interceptedRequests[match] && (
-                      <>
+                      <Fragment>
                         <div className="intercepted-requests">
                           Intercepted Requests:
                         </div>
                         <div className="intercepted">
-                          {this.state.interceptedRequests[match] && this.state.interceptedRequests[match].map(({url, num}) => (
-                            <Tooltip placement="top" title={url} key={url}>
-                              <Badge
-                                count={num}
-                                style={{
-                                  backgroundColor: '#fff',
-                                  color: '#999',
-                                  boxShadow: '0 0 0 1px #d9d9d9 inset',
-                                  marginTop: '-3px',
-                                  marginRight: '4px'
-                                }}
-                              />
-                              <span className="url">{url}</span>
-                            </Tooltip>
+                          {this.state.interceptedRequests[match] && this.state.interceptedRequests[match].map(({url, num, response}) => (
+                            <Fragment>
+                              <Tooltip placement="top" title={url} key={url}>
+                                <Badge
+                                  count={num}
+                                  style={{
+                                    backgroundColor: '#fff',
+                                    color: '#999',
+                                    boxShadow: '0 0 0 1px #d9d9d9 inset',
+                                    marginTop: '-3px',
+                                    marginRight: '4px'
+                                  }}
+                                />
+                                <span className="url">{url}</span>
+                              </Tooltip>
+                              <div className="original-response">
+                                Original Response:
+                              </div>
+                              <Tooltip placement="top" title={response} key={response}>
+                                <TextArea rows={4} value={response}/>
+                              </Tooltip>
+                            </Fragment>
                           ))}
                         </div>
-                      </>
+                      </Fragment>
                     )}
                   </Panel>
                 ))}
               </Collapse>
             </div>
           ): <div />}
-          <div ref={ref => this.addBtnRef = ref} className="wrapper-btn-add">
-            <Button
-              className={`btn-add ${window.setting.requestMock_switchOn ? '' : ' btn-add-hidden'}`}
-              type="primary"
-              shape="circle"
-              icon="plus"
-              onClick={this.handleClickAdd}
-              disabled={!window.setting.requestMock_switchOn}
-            />
-          </div>
         </div>
+        <Button
+          className={`btn-add ${window.setting.requestMock_switchOn ? '' : ' btn-add-hidden'}`}
+          type="primary"
+          shape="circle"
+          icon="plus"
+          onClick={this.handleClickAdd}
+          disabled={!window.setting.requestMock_switchOn}
+        />
       </div>
     );
   }

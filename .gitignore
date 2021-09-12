@@ -1,3 +1,5 @@
 node_modules
 dist
 .idea
+chrome-extension/request-mock.pem
+chrome-extension/request-mock.crx

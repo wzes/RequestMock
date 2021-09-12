@@ -200,9 +200,7 @@ export default class Main extends Component {
                               <div className="original-response">
                                 Original Response:
                               </div>
-                              <Tooltip placement="top" title={response} key={response}>
-                                <TextArea rows={4} value={response}/>
-                              </Tooltip>
+                              <TextArea rows={4} value={response}/>
                             </Fragment>
                           ))}
                         </div>

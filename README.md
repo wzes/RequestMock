@@ -1,5 +1,5 @@
 Request Mock Extension
 
-Use
+Usage
 
-Chrome load extension！
+load unpacked and select chrome-extension into in Chrome!
